@@ -2,6 +2,9 @@ import os
 import unittest
 import tempfile
 
+import gi
+gi.require_version('Smf', '1.0')
+
 from gi.repository import Smf
 
 

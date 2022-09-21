@@ -13,5 +13,5 @@ RUN_TESTS_ENV_VARS= \
 
 check-local:
 	@echo "======================================================================"
-	@(`which python` --version)
-	$(RUN_TESTS_ENV_VARS) `which python` -m unittest discover --verbose --start-directory $(srcdir)
+	@(`which python3` --version)
+	$(RUN_TESTS_ENV_VARS) `which python3` -m unittest discover --verbose --start-directory $(srcdir)
