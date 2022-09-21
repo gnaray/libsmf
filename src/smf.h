@@ -437,13 +437,12 @@ const char *smf_get_version(void) G_GNUC_WARN_UNUSED_RESULT;
 
 /* Backwards compatable API/ABI */
 #ifndef __GTK_DOC_IGNORE__
+#ifndef __GI_SCANNER__
 
 typedef SmfFile   		smf_t;
 typedef SmfTempo  		smf_tempo_t;
 typedef SmfTrack  		smf_track_t;
 typedef SmfEvent  		smf_event_t;
-
-#ifndef __GI_SCANNER__
 
 G_DEPRECATED_FOR(smf_file_new)
 smf_t *smf_new(void) G_GNUC_WARN_UNUSED_RESULT;
