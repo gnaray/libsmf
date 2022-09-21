@@ -72,7 +72,7 @@ smf_extend(smf_t *smf, const int length)
 	/* Fix up pointers.  XXX: omgwtf. */
 	for (i = 1; i <= smf->number_of_tracks; i++) {
 		smf_track_t *track;
-		track = smf_get_track_by_number(smf, i);
+		track = smf_file_get_track_by_number(smf, i);
 		if (track->file_buffer != NULL)
 			track->file_buffer = (char *)track->file_buffer + ((char *)smf->file_buffer - previous_file_buffer);
 	}
@@ -434,7 +434,7 @@ free_buffer(smf_t *smf)
 	smf->file_buffer_length = 0;
 
 	for (i = 1; i <= smf->number_of_tracks; i++) {
-		track = smf_get_track_by_number(smf, i);
+		track = smf_file_get_track_by_number(smf, i);
 		assert(track);
 		track->file_buffer = NULL;
 		track->file_buffer_length = 0;
@@ -456,7 +456,7 @@ pointers_are_clear(smf_t *smf)
 	assert(smf->file_buffer_length == 0);
 
 	for (i = 1; i <= smf->number_of_tracks; i++) {
-		track = smf_get_track_by_number(smf, i);
+		track = smf_file_get_track_by_number(smf, i);
 
 		assert(track != NULL);
 		assert(track->file_buffer == NULL);
@@ -519,7 +519,7 @@ smf_validate(smf_t *smf)
 	}
 
 	for (trackno = 1; trackno <= smf->number_of_tracks; trackno++) {
-		track = smf_get_track_by_number(smf, trackno);
+		track = smf_file_get_track_by_number(smf, trackno);
 		assert(track);
 
 		eot_found = 0;
@@ -593,7 +593,7 @@ assert_smf_is_identical(const smf_t *a, const smf_t *b)
 	assert(a->number_of_tracks == b->number_of_tracks);
 
 	for (i = 1; i <= a->number_of_tracks; i++)
-		assert_smf_track_is_identical(smf_get_track_by_number(a, i), smf_get_track_by_number(b, i));
+		assert_smf_track_is_identical(smf_file_get_track_by_number(a, i), smf_file_get_track_by_number(b, i));
 
 	/* We do not need to compare tempos explicitly, as tempo is always computed from track contents. */
 }
@@ -603,12 +603,12 @@ assert_smf_saved_correctly(const smf_t *smf, const char *file_name)
 {
 	smf_t *saved;
 
-	saved = smf_load(file_name);
+	saved = smf_file_load(file_name);
 	assert(saved != NULL);
 
 	assert_smf_is_identical(smf, saved);
 
-	smf_delete(saved);
+	smf_file_unref(saved);
 }
 
 #endif /* !NDEBUG */
@@ -630,7 +630,7 @@ smf_file_save(smf_t *smf, const char *file_name)
 	int i, error;
 	smf_track_t *track;
 
-	smf_rewind(smf);
+	smf_file_rewind(smf);
 
 	assert(pointers_are_clear(smf));
 
@@ -641,7 +641,7 @@ smf_file_save(smf_t *smf, const char *file_name)
 		return (-2);
 
 	for (i = 1; i <= smf->number_of_tracks; i++) {
-		track = smf_get_track_by_number(smf, i);
+		track = smf_file_get_track_by_number(smf, i);
 
 		assert(track != NULL);
 

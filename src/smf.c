@@ -94,10 +94,10 @@ smf_file_new(void)
 		(GDestroyNotify)smf_tempo_unref);
 	assert(smf->tempo_array);
 
-	cantfail = smf_set_ppqn(smf, 120);
+	cantfail = smf_file_set_ppqn(smf, 120);
 	assert(!cantfail);
 
-	cantfail = smf_set_format(smf, 0);
+	cantfail = smf_file_set_format(smf, 0);
 	assert(!cantfail);
 
 	smf_file_init_tempo(smf);
@@ -263,7 +263,7 @@ smf_file_add_track(SmfFile *smf, SmfTrack *track)
 	assert(smf->number_of_tracks == smf->tracks_array->len);
 
 	if (smf->number_of_tracks > 1) {
-		cantfail = smf_set_format(smf, 1);
+		cantfail = smf_file_set_format(smf, 1);
 		assert(!cantfail);
 	}
 }
@@ -297,7 +297,7 @@ smf_file_remove_track(smf_t *smf, smf_track_t *track)
 
 	/* Renumber the rest of the tracks, so they are consecutively numbered. */
 	for (i = track->track_number; i <= smf->number_of_tracks; i++) {
-		tmp = smf_get_track_by_number(smf, i);
+		tmp = smf_file_get_track_by_number(smf, i);
 		tmp->track_number = i;
 
 		/*
@@ -904,7 +904,7 @@ smf_file_set_format(SmfFile *smf, int format)
  * @ppqn: New PPQN
  *
  * Sets the PPQN ("Division") field of MThd header.  This is mandatory, you
- * should call it right after smf_new.  Note that changing PPQN will change time_seconds
+ * should call it right after smf_file_new.  Note that changing PPQN will change time_seconds
  * of all the events.
  *
  * Returns: 0 if everything went ok, nonzero otherwise.
@@ -1072,7 +1072,7 @@ smf_file_find_track_with_next_event(SmfFile *smf)
 
 	/* Find track with event that should be played next. */
 	for (i = 1; i <= smf->number_of_tracks; i++) {
-		track = smf_get_track_by_number(smf, i);
+		track = smf_file_get_track_by_number(smf, i);
 
 		assert(track);
 
@@ -1215,7 +1215,7 @@ smf_file_seek_to_event(SmfFile *smf, const SmfEvent *target)
 {
 	SmfEvent *event;
 
-	smf_rewind(smf);
+	smf_file_rewind(smf);
 
 #if 0
 	g_debug("Seeking to event %d, track %d.", target->event_number, target->track->track_number);
@@ -1228,7 +1228,7 @@ smf_file_seek_to_event(SmfFile *smf, const SmfEvent *target)
 		assert(event);
 
 		if (event != target)
-			smf_skip_next_event(smf);
+			smf_file_skip_next_event(smf);
 		else
 			break;
 	}	
@@ -1262,7 +1262,7 @@ smf_file_seek_to_seconds(SmfFile *smf, double seconds)
 		return (0);
 	}
 
-	smf_rewind(smf);
+	smf_file_rewind(smf);
 
 #if 0
 	g_debug("Seeking to %f seconds.", seconds);
@@ -1277,7 +1277,7 @@ smf_file_seek_to_seconds(SmfFile *smf, double seconds)
 		}
 
 		if (event->time_seconds < seconds)
-			smf_skip_next_event(smf);
+			smf_file_skip_next_event(smf);
 		else
 			break;
 	}
@@ -1304,7 +1304,7 @@ smf_file_seek_to_pulses(SmfFile *smf, int pulses)
 
 	assert(pulses >= 0);
 
-	smf_rewind(smf);
+	smf_file_rewind(smf);
 
 #if 0
 	g_debug("Seeking to %d pulses.", pulses);
@@ -1319,7 +1319,7 @@ smf_file_seek_to_pulses(SmfFile *smf, int pulses)
 		}
 
 		if (event->time_pulses < pulses)
-			smf_skip_next_event(smf);
+			smf_file_skip_next_event(smf);
 		else
 			break;
 	}
@@ -1400,7 +1400,7 @@ smf_file_get_length_seconds(const SmfFile *smf)
 int
 smf_event_is_last(const SmfEvent *event)
 {
-	if (smf_get_length_pulses(event->track->smf) <= event->time_pulses)
+	if (smf_file_get_length_pulses(event->track->smf) <= event->time_pulses)
 		return (1);
 
 	return (0);

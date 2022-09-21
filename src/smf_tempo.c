@@ -52,7 +52,7 @@ new_tempo(smf_t *smf, int pulses)
 	smf_tempo_t *tempo, *previous_tempo = NULL;
 
 	if (smf->tempo_array->len > 0) {
-		previous_tempo = smf_get_last_tempo(smf);
+		previous_tempo = smf_file_get_last_tempo(smf);
 
 		/* If previous tempo starts at the same time as new one, reuse it, updating in place. */
 		if (previous_tempo->time_pulses == pulses)
@@ -216,7 +216,7 @@ remove_last_tempo_with_pulses(smf_t *smf, int pulses)
 	if (smf->tempo_array->len == 0)
 		return;
 
-	tempo = smf_get_last_tempo(smf);
+	tempo = smf_file_get_last_tempo(smf);
 
 	/* Workaround part two. */
 	if (tempo->time_pulses != pulses)
@@ -231,7 +231,7 @@ seconds_from_pulses(const smf_t *smf, int pulses)
 	double seconds;
 	smf_tempo_t *tempo;
 
-	tempo = smf_get_tempo_by_pulses(smf, pulses);
+	tempo = smf_file_get_tempo_by_pulses(smf, pulses);
 	assert(tempo);
 	assert(tempo->time_pulses <= pulses);
 
@@ -247,7 +247,7 @@ pulses_from_seconds(const smf_t *smf, double seconds)
 	int pulses = 0;
 	smf_tempo_t *tempo;
 
-	tempo = smf_get_tempo_by_seconds(smf, seconds);
+	tempo = smf_file_get_tempo_by_seconds(smf, seconds);
 	assert(tempo);
 	assert(tempo->time_seconds <= seconds);
 
@@ -269,11 +269,11 @@ smf_file_create_tempo_map_and_compute_seconds(smf_t *smf)
 {
 	smf_event_t *event;
 
-	smf_rewind(smf);
+	smf_file_rewind(smf);
 	smf_file_init_tempo(smf);
 
 	for (;;) {
-		event = smf_get_next_event(smf);
+		event = smf_file_get_next_event(smf);
 		
 		if (event == NULL)
 			return;
@@ -320,12 +320,12 @@ smf_file_get_tempo_by_pulses(const smf_t *smf, int pulses)
 	assert(pulses >= 0);
 
 	if (pulses == 0)
-		return (smf_get_tempo_by_number(smf, 0));
+		return (smf_file_get_tempo_by_number(smf, 0));
 
 	assert(smf->tempo_array != NULL);
 	
 	for (i = smf->tempo_array->len - 1; i >= 0; i--) {
-		tempo = smf_get_tempo_by_number(smf, i);
+		tempo = smf_file_get_tempo_by_number(smf, i);
 
 		assert(tempo);
 		if (tempo->time_pulses < pulses)
@@ -351,12 +351,12 @@ smf_file_get_tempo_by_seconds(const smf_t *smf, double seconds)
 	assert(seconds >= 0.0);
 
 	if (seconds == 0.0)
-		return (smf_get_tempo_by_number(smf, 0));
+		return (smf_file_get_tempo_by_number(smf, 0));
 
 	assert(smf->tempo_array != NULL);
 	
 	for (i = smf->tempo_array->len - 1; i >= 0; i--) {
-		tempo = smf_get_tempo_by_number(smf, i);
+		tempo = smf_file_get_tempo_by_number(smf, i);
 
 		assert(tempo);
 		if (tempo->time_seconds < seconds)
@@ -378,7 +378,7 @@ smf_file_get_last_tempo(const smf_t *smf)
 {
 	smf_tempo_t *tempo;
 
-	tempo = smf_get_tempo_by_number(smf, smf->tempo_array->len - 1);
+	tempo = smf_file_get_tempo_by_number(smf, smf->tempo_array->len - 1);
 	assert(tempo);
 
 	return (tempo);

@@ -883,7 +883,7 @@ smf_file_load_from_memory(const void *buffer, const int buffer_length)
 {
 	int i;
 
-	smf_t *smf = smf_new();
+	smf_t *smf = smf_file_new();
 
 	smf->file_buffer = (void *)buffer;
 	smf->file_buffer_length = buffer_length;
@@ -897,7 +897,7 @@ smf_file_load_from_memory(const void *buffer, const int buffer_length)
 		if (track == NULL)
 			return (NULL);
 
-		smf_add_track(smf, track);
+		smf_file_add_track(smf, track);
 
 		/* Skip unparseable chunks. */
 		if (parse_mtrk_chunk(track)) {
@@ -944,7 +944,7 @@ smf_file_load(const char *file_name)
 	if (load_file_into_buffer(&file_buffer, &file_buffer_length, file_name))
 		return (NULL);
 
-	smf = smf_load_from_memory(file_buffer, file_buffer_length);
+	smf = smf_file_load_from_memory(file_buffer, file_buffer_length);
 
 	memset(file_buffer, 0, file_buffer_length);
 	free(file_buffer);
@@ -952,7 +952,7 @@ smf_file_load(const char *file_name)
 	if (smf == NULL)
 		return (NULL);
 
-	smf_rewind(smf);
+	smf_file_rewind(smf);
 
 	return (smf);
 }

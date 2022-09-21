@@ -54,7 +54,7 @@
  * 	return;
  * }
  *
- * while ((event = smf_get_next_event(smf)) != NULL) {
+ * while ((event = smf_file_get_next_event(smf)) != NULL) {
  * 	if (smf_event_is_metadata(event))
  * 		continue;
  *

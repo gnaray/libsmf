@@ -7,7 +7,7 @@ smf_t *smf_new(void) {
 }
 
 void smf_delete(smf_t *smf) {
-    smf_file_delete(smf);
+    smf_file_unref(smf);
 }
 
 int smf_set_format(smf_t *smf, int format) {
@@ -83,7 +83,7 @@ smf_tempo_t *smf_get_tempo_by_pulses(const smf_t *smf, int pulses) {
 }
 
 smf_tempo_t *smf_get_tempo_by_seconds(const smf_t *smf, double seconds) {
-    return smf_get_tempo_by_seconds(smf, seconds);
+    return smf_file_get_tempo_by_seconds(smf, seconds);
 }
 smf_tempo_t *smf_get_tempo_by_number(const smf_t *smf, int number) {
     return smf_file_get_tempo_by_number(smf, number);

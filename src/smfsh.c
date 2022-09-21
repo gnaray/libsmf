@@ -90,7 +90,7 @@ cmd_load(char *file_name)
 	selected_event = NULL;
 
 	if (smf != NULL) {
-		smf_delete(smf);
+		smf_file_unref(smf);
 		smf = NULL;
 	}
 
@@ -98,11 +98,11 @@ cmd_load(char *file_name)
 		free(last_file_name);
 	last_file_name = strdup(file_name);
 
-	smf = smf_load(file_name);
+	smf = smf_file_load(file_name);
 	if (smf == NULL) {
 		g_critical("Couldn't load '%s'.", file_name);
 
-		smf = smf_new();
+		smf = smf_file_new();
 		if (smf == NULL) {
 			g_critical("Cannot initialize smf_t.");
 			return (-1);
@@ -112,7 +112,7 @@ cmd_load(char *file_name)
 	}
 
 	g_message("File '%s' loaded.", file_name);
-	decoded = smf_decode(smf);
+	decoded = smf_file_decode(smf);
 	g_message("%s.", decoded);
 	free(decoded);
 
@@ -143,7 +143,7 @@ cmd_save(char *file_name)
 		free(last_file_name);
 	last_file_name = strdup(file_name);
 
-	ret = smf_save(smf, file_name);
+	ret = smf_file_save(smf, file_name);
 	if (ret) {
 		g_critical("Couldn't save '%s'", file_name);
 		return (-1);
@@ -176,8 +176,8 @@ cmd_ppqn(char *new_ppqn)
 			return (-2);
 		}
 
-		if (smf_set_ppqn(smf, tmp)) {
-			g_message("smf_set_ppqn failed.");
+		if (smf_file_set_ppqn(smf, tmp)) {
+			g_message("smf_file_set_ppqn failed.");
 			return (-3);
 		}
 
@@ -207,8 +207,8 @@ cmd_format(char *new_format)
 			return (-2);
 		}
 
-		if (smf_set_format(smf, tmp)) {
-			g_critical("smf_set_format failed.");
+		if (smf_file_set_format(smf, tmp)) {
+			g_critical("smf_file_set_format failed.");
 			return (-3);
 		}
 
@@ -285,9 +285,9 @@ cmd_track(char *arg)
 		if (num < 0)
 			return (-1);
 
-		selected_track = smf_get_track_by_number(smf, num);
+		selected_track = smf_file_get_track_by_number(smf, num);
 		if (selected_track == NULL) {
-			g_critical("smf_get_track_by_number() failed, track not selected.");
+			g_critical("smf_file_get_track_by_number() failed, track not selected.");
 			return (-3);
 		}
 
@@ -310,7 +310,7 @@ cmd_trackadd(char *notused)
 		return (-1);
 	}
 
-	smf_add_track(smf, selected_track);
+	smf_file_add_track(smf, selected_track);
 
 	selected_event = NULL;
 
@@ -332,7 +332,7 @@ cmd_trackrm(char *arg)
 		selected_event = NULL;
 	}
 
-	smf_track_delete(smf_get_track_by_number(smf, num));
+	smf_track_delete(smf_file_get_track_by_number(smf, num));
 
 	g_message("Track %d removed.", num);
 
@@ -393,12 +393,12 @@ cmd_events(char *notused)
 
 	g_message("List of events in track %d follows:", selected_track->track_number);
 
-	smf_rewind(smf);
+	smf_file_rewind(smf);
 
 	while ((event = smf_track_get_next_event(selected_track)) != NULL)
 		show_event(event);
 
-	smf_rewind(smf);
+	smf_file_rewind(smf);
 
 	return (0);
 }
@@ -725,7 +725,7 @@ cmd_tempo(char *notused)
 	(void) notused;
 
 	for (i = 0;; i++) {
-		tempo = smf_get_tempo_by_number(smf, i);
+		tempo = smf_file_get_tempo_by_number(smf, i);
 		if (tempo == NULL)
 			break;
 
@@ -743,7 +743,7 @@ static int
 cmd_length(char *notused)
 {
 	(void) notused;
-	g_message("Length: %d pulses, %f seconds.", smf_get_length_pulses(smf), smf_get_length_seconds(smf));
+	g_message("Length: %d pulses, %f seconds.", smf_file_get_length_pulses(smf), smf_file_get_length_seconds(smf));
 
 	return (0);
 }
@@ -1025,7 +1025,7 @@ main(int argc, char *argv[])
 
 	g_log_set_default_handler(log_handler, NULL);
 
-	smf = smf_new();
+	smf = smf_file_new();
 	if (smf == NULL) {
 		g_critical("Cannot initialize smf_t.");
 		return (-1);
