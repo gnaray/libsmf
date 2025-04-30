@@ -342,8 +342,6 @@ int smf_set_ppqn(smf_t *smf, int format) WARN_UNUSED_RESULT;
 
 char *smf_decode(const smf_t *smf) WARN_UNUSED_RESULT;
 
-smf_track_t *smf_get_track_by_number(const smf_t *smf, int track_number) WARN_UNUSED_RESULT;
-
 smf_event_t *smf_peek_next_event(smf_t *smf) WARN_UNUSED_RESULT;
 smf_event_t *smf_get_next_event(smf_t *smf) WARN_UNUSED_RESULT;
 void smf_skip_next_event(smf_t *smf);
@@ -363,6 +361,9 @@ void smf_track_remove_from_smf(smf_track_t *track);
 /* Routines for manipulating smf_track_t. */
 smf_track_t *smf_track_new(void) WARN_UNUSED_RESULT;
 void smf_track_delete(smf_track_t *track);
+
+smf_track_t *smf_get_track_by_number(const smf_t *smf, int track_number) WARN_UNUSED_RESULT;
+smf_track_t *smf_find_track_with_next_event(smf_t *smf) WARN_UNUSED_RESULT;
 
 smf_event_t *smf_track_get_next_event(smf_track_t *track) WARN_UNUSED_RESULT;
 smf_event_t *smf_track_get_event_by_number(const smf_track_t *track, int event_number) WARN_UNUSED_RESULT;
