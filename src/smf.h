@@ -389,6 +389,7 @@ int smf_event_is_metadata(const smf_event_t *event) WARN_UNUSED_RESULT;
 int smf_event_is_system_realtime(const smf_event_t *event) WARN_UNUSED_RESULT;
 int smf_event_is_system_common(const smf_event_t *event) WARN_UNUSED_RESULT;
 int smf_event_is_sysex(const smf_event_t *event) WARN_UNUSED_RESULT;
+int smf_event_can_have_running_status(const smf_event_t *event) WARN_UNUSED_RESULT;
 int smf_event_is_eot(const smf_event_t *event) WARN_UNUSED_RESULT;
 int smf_event_is_textual(const smf_event_t *event) WARN_UNUSED_RESULT;
 char *smf_event_decode(const smf_event_t *event) WARN_UNUSED_RESULT;

@@ -492,7 +492,6 @@ extract_midi_event(const unsigned char *buf, const int buffer_length, smf_event_
 	if (is_status_byte(*c)) {
 		status = *c;
 		c++;
-
 	} else {
 		/* No, we use running status then. */
 		status = last_status;
@@ -576,7 +575,10 @@ parse_next_event(smf_track_t *track)
 
 	c += len;
 	buffer_length -= len;
-	track->last_status = event->midi_buffer[0];
+	if (smf_event_can_have_running_status(event))
+		track->last_status = event->midi_buffer[0];
+	else if (smf_event_is_system_common(event))
+		track->last_status = 0; // System common messages cancel running status.
 	track->next_event_offset += c - start;
 
 	if (smf_track_add_event_delta_pulses(track, event, time) < 0)
@@ -697,6 +699,7 @@ parse_mtrk_header(smf_track_t *track)
 	track->file_buffer = mtrk;
 	track->file_buffer_length = sizeof(struct chunk_header_struct) + ntohl(mtrk->length);
 	track->next_event_offset = sizeof(struct chunk_header_struct);
+	track->last_status = 0;
 
 	return (0);
 }

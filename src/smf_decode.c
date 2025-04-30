@@ -59,7 +59,7 @@ smf_event_is_metadata(const smf_event_t *event)
 	assert(event->midi_buffer);
 	assert(event->midi_buffer_length > 0);
 	
-	if (event->midi_buffer[0] == 0xFF)
+	if (event->midi_buffer[0] == 0xFF) // 0xFF is metadata in SMF, however it is a Reset midi message.
 		return (1);
 
 	return (0);
@@ -110,6 +110,15 @@ smf_event_is_sysex(const smf_event_t *event)
 		return (1);
 
 	return (0);
+}
+
+/**
+ * \return Nonzero if event can have running status.
+ */
+int
+smf_event_can_have_running_status(const smf_event_t *event)
+{
+	return !smf_event_is_system_common(event) && !smf_event_is_system_realtime(event) && !smf_event_is_metadata(event);
 }
 
 static char *

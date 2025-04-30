@@ -310,10 +310,20 @@ write_escaped_event_contents(smf_event_t *event)
 static int
 write_event_contents(smf_event_t *event)
 {
+	if (smf_event_is_system_common(event))
+		event->track->last_status = 0; // System common messages cancel running status.
+
 	if (smf_event_is_system_realtime(event) || smf_event_is_system_common(event))
 		return (write_escaped_event_contents(event));
 
-	return (track_append(event->track, event->midi_buffer, event->midi_buffer_length));
+	int omit_status = 0;
+	if (smf_event_can_have_running_status(event)) {
+		if (event->track->last_status == event->midi_buffer[0])
+			omit_status = 1;
+		else
+			event->track->last_status = event->midi_buffer[0];
+	}
+	return (track_append(event->track, event->midi_buffer + omit_status, event->midi_buffer_length - omit_status));
 }
 
 /**
@@ -344,6 +354,8 @@ write_mtrk_header(smf_track_t *track)
 	struct chunk_header_struct mtrk_header;
 
 	memcpy(mtrk_header.id, "MTrk", 4);
+
+	track->last_status = 0;
 
 	return (track_append(track, &mtrk_header, sizeof(mtrk_header)));
 }
