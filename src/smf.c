@@ -978,10 +978,9 @@ smf_seek_to_event(smf_t *smf, const smf_event_t *target)
 		/* There can't be NULL here, unless "target" is not in this smf. */
 		assert(event);
 
-		if (event != target)
-			smf_skip_next_event(smf);
-		else
+		if (event == target)
 			break;
+		smf_skip_next_event(smf);
 	}	
 
 	smf->last_seek_position = event->time_seconds;
