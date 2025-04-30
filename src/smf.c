@@ -1000,13 +1000,6 @@ smf_seek_to_seconds(smf_t *smf, double seconds)
 
 	assert(seconds >= 0.0);
 
-	if (seconds == smf->last_seek_position) {
-#if 0
-		smf_debug("Avoiding seek to %f seconds.", seconds);
-#endif
-		return (0);
-	}
-
 	smf_rewind(smf);
 
 #if 0
