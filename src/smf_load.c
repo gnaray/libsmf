@@ -922,6 +922,8 @@ smf_load(const char *file_name)
 	void *file_buffer;
 	smf_t *smf;
 
+	smf_debug("Loading %s.", file_name);
+
 	if (load_file_into_buffer(&file_buffer, &file_buffer_length, file_name))
 		return (NULL);
 

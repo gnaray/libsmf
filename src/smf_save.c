@@ -612,6 +612,7 @@ assert_smf_saved_correctly(const smf_t *smf, const char *file_name)
 {
 	smf_t *saved;
 
+	smf_debug("Checking if saved %s is correct.", file_name);
 	saved = smf_load(file_name);
 	assert(saved != NULL);
 
@@ -634,6 +635,7 @@ smf_save(smf_t *smf, const char *file_name)
 	int i, error;
 	smf_track_t *track;
 
+	smf_debug("Saving %s.", file_name);
 	smf_rewind(smf);
 
 	assert(pointers_are_clear(smf));
