@@ -48,6 +48,8 @@
 #include "smf.h"
 #include "smf_private.h"
 
+const smf_options_t DefaultOptions;
+
 /**
  * Returns pointer to the next SMF chunk in smf->buffer, based on length of the previous one.
  * Returns NULL in case of error.
@@ -212,7 +214,7 @@ parse_mthd_chunk(smf_t *smf)
  * Returns 0 iff everything went OK, different value in case of error.
  */
 static int
-extract_vlq(const unsigned char *buf, const int buffer_length, int *value, int *len)
+extract_vlq(const unsigned char *buf, const int buffer_length, int *value, int *len, const smf_options_t options)
 {
 	int val = 0;
 	const unsigned char *c = buf;
@@ -223,6 +225,11 @@ extract_vlq(const unsigned char *buf, const int buffer_length, int *value, int *
 		if (c >= buf + buffer_length) {
 			smf_critical("End of buffer in extract_vlq().");
 			return (-1);
+		}
+
+		if (options.option_flags && SMF_OPTION_USE_ONE_BYTE_DELTA_TIME_WHEN_LOADING) {
+			val = *c;
+			break;
 		}
 
 		val = (val << 7) + (*c & 0x7F);
@@ -279,7 +286,7 @@ is_escape_byte(const unsigned char status)
  * this.
  */
 static int
-expected_sysex_length(const unsigned char status, const unsigned char *second_byte, const int buffer_length, int *consumed_bytes)
+expected_sysex_length(const unsigned char status, const unsigned char *second_byte, const int buffer_length, int *consumed_bytes, const smf_options_t options)
 {
 	int sysex_length, len;
 
@@ -290,7 +297,7 @@ expected_sysex_length(const unsigned char status, const unsigned char *second_by
 		return (-1);
 	}
 
-	if (extract_vlq(second_byte, buffer_length, &sysex_length, &len))
+	if (extract_vlq(second_byte, buffer_length, &sysex_length, &len, options))
 		return (-1);
 
 	if (consumed_bytes != NULL)
@@ -301,10 +308,10 @@ expected_sysex_length(const unsigned char status, const unsigned char *second_by
 }
 
 static int
-expected_escaped_length(const unsigned char status, const unsigned char *second_byte, const int buffer_length, int *consumed_bytes)
+expected_escaped_length(const unsigned char status, const unsigned char *second_byte, const int buffer_length, int *consumed_bytes, const smf_options_t options)
 {
 	/* -1, because we do not want to account for 0x7F status. */
-	return (expected_sysex_length(status, second_byte, buffer_length, consumed_bytes) - 1);
+	return (expected_sysex_length(status, second_byte, buffer_length, consumed_bytes, options) - 1);
 }
 
 /**
@@ -387,7 +394,7 @@ expected_message_length(unsigned char status, const unsigned char *second_byte, 
 }
 
 static int
-extract_sysex_event(const unsigned char *buf, const int buffer_length, smf_event_t *event, int *len, int last_status)
+extract_sysex_event(const unsigned char *buf, const int buffer_length, smf_event_t *event, int *len, int last_status, const smf_options_t options)
 {
 	int status, message_length, vlq_length;
 	const unsigned char *c = buf;
@@ -399,7 +406,7 @@ extract_sysex_event(const unsigned char *buf, const int buffer_length, smf_event
 
 	c++;
 
-	message_length = expected_sysex_length(status, c, buffer_length - 1, &vlq_length);
+	message_length = expected_sysex_length(status, c, buffer_length - 1, &vlq_length, options);
 
 	if (message_length < 0)
 		return (-3);
@@ -427,7 +434,7 @@ extract_sysex_event(const unsigned char *buf, const int buffer_length, smf_event
 }
 
 static int
-extract_escaped_event(const unsigned char *buf, const int buffer_length, smf_event_t *event, int *len, int last_status)
+extract_escaped_event(const unsigned char *buf, const int buffer_length, smf_event_t *event, int *len, int last_status, const smf_options_t options)
 {
 	int status, message_length, vlq_length;
 	const unsigned char *c = buf;
@@ -439,7 +446,7 @@ extract_escaped_event(const unsigned char *buf, const int buffer_length, smf_eve
 
 	c++;
 
-	message_length = expected_escaped_length(status, c, buffer_length - 1, &vlq_length);
+	message_length = expected_escaped_length(status, c, buffer_length - 1, &vlq_length, options);
 
 	if (message_length < 0)
 		return (-3);
@@ -481,7 +488,7 @@ extract_escaped_event(const unsigned char *buf, const int buffer_length, smf_eve
  * Returns 0 iff everything went OK, value < 0 in case of error.
  */
 static int
-extract_midi_event(const unsigned char *buf, const int buffer_length, smf_event_t *event, int *len, int last_status)
+extract_midi_event(const unsigned char *buf, const int buffer_length, smf_event_t *event, int *len, int last_status, const smf_options_t options)
 {
 	int status, message_length;
 	const unsigned char *c = buf;
@@ -503,10 +510,10 @@ extract_midi_event(const unsigned char *buf, const int buffer_length, smf_event_
 	}
 
 	if (is_sysex_byte(status))
-		return (extract_sysex_event(buf, buffer_length, event, len, last_status));
+		return (extract_sysex_event(buf, buffer_length, event, len, last_status, options));
 
 	if (is_escape_byte(status))
-		return (extract_escaped_event(buf, buffer_length, event, len, last_status));
+		return (extract_escaped_event(buf, buffer_length, event, len, last_status, options));
 
 	/* At this point, "c" points to first byte following the status byte. */
 	message_length = expected_message_length(status, c, buffer_length - (c - buf));
@@ -541,7 +548,7 @@ extract_midi_event(const unsigned char *buf, const int buffer_length, smf_event_
  * see smf_event_new().
  */
 static smf_event_t *
-parse_next_event(smf_track_t *track)
+parse_next_event(smf_track_t *track, const smf_options_t options)
 {
 	int time = 0, len, buffer_length;
 	unsigned char *c, *start;
@@ -560,7 +567,7 @@ parse_next_event(smf_track_t *track)
 	assert(buffer_length > 0);
 
 	/* First, extract time offset from previous event. */
-	if (extract_vlq(c, buffer_length, &time, &len))
+	if (extract_vlq(c, buffer_length, &time, &len, options))
 		goto error;
 
 	c += len;
@@ -570,7 +577,7 @@ parse_next_event(smf_track_t *track)
 		goto error;
 
 	/* Now, extract the actual event. */
-	if (extract_midi_event(c, buffer_length, event, &len, track->last_status))
+	if (extract_midi_event(c, buffer_length, event, &len, track->last_status, options))
 		goto error;
 
 	c += len;
@@ -651,6 +658,17 @@ smf_event_is_textual(const smf_event_t *event)
 char *
 smf_event_extract_text(const smf_event_t *event)
 {
+	return smf_event_extract_text_with_options(event, DefaultOptions);
+}
+
+/**
+ * Extracts text from "textual metaevents", such as Text or Lyric considering the given options.
+ *
+ * \return Zero-terminated string extracted from "text events" or NULL, if there was any problem.
+ */
+char *
+smf_event_extract_text_with_options(const smf_event_t *event, const smf_options_t options)
+{
 	int string_length = -1, length_length = -1;
 
 	if (!smf_event_is_textual(event))
@@ -661,7 +679,7 @@ smf_event_extract_text(const smf_event_t *event)
 		return (NULL);
 	}
 
-	extract_vlq((void *)&(event->midi_buffer[2]), event->midi_buffer_length - 2, &string_length, &length_length);
+	extract_vlq((void *)&(event->midi_buffer[2]), event->midi_buffer_length - 2, &string_length, &length_length, options);
 
 	if (string_length <= 0) {
 		smf_critical("smf_event_extract_text: truncated MIDI message.");
@@ -770,7 +788,7 @@ smf_event_is_valid(const smf_event_t *event)
  * Parse events and put it on the track.
  */
 static int
-parse_mtrk_chunk(smf_track_t *track)
+parse_mtrk_chunk(smf_track_t *track, const smf_options_t options)
 {
 	smf_event_t *event;
 
@@ -778,7 +796,7 @@ parse_mtrk_chunk(smf_track_t *track)
 		return (-1);
 
 	for (;;) {
-		event = parse_next_event(track);
+		event = parse_next_event(track, options);
 
 		/* Couldn't parse an event? */
 		if (event == NULL) {
@@ -859,11 +877,21 @@ load_file_into_buffer(void **file_buffer, int *file_buffer_length, const char *f
 }
 
 /**
-  * Creates new SMF and fills it with data loaded from the given buffer.
+ * Creates new SMF and fills it with data loaded from the given buffer.
  * \return SMF or NULL, if loading failed.
-  */
+ */
 smf_t *
 smf_load_from_memory(const void *buffer, const int buffer_length)
+{
+	return smf_load_from_memory_with_options(buffer, buffer_length, DefaultOptions);
+}
+
+/**
+ * Creates new SMF and fills it with data loaded from the given buffer considering the given options.
+ * \return SMF or NULL, if loading failed.
+ */
+smf_t *
+smf_load_from_memory_with_options(const void *buffer, const int buffer_length, const smf_options_t options)
 {
 	int i;
 
@@ -885,7 +913,7 @@ smf_load_from_memory(const void *buffer, const int buffer_length)
 			return (NULL);
 
 		/* Skip unparseable chunks. */
-		if (parse_mtrk_chunk(track)) {
+		if (parse_mtrk_chunk(track, options)) {
 			smf_warning("SMF warning: Cannot load track.");
 			smf_track_delete(track);
 		}
@@ -918,6 +946,18 @@ smf_load_from_memory(const void *buffer, const int buffer_length)
 smf_t *
 smf_load(const char *file_name)
 {
+	return smf_load_with_options(file_name, DefaultOptions);
+}
+
+/**
+ * Loads SMF file considering the given options.
+ *
+ * \param file_name Path to the file.
+ * \return SMF or NULL, if loading failed.
+ */
+smf_t *
+smf_load_with_options(const char *file_name, const smf_options_t options)
+{
 	int file_buffer_length;
 	void *file_buffer;
 	smf_t *smf;
@@ -927,7 +967,7 @@ smf_load(const char *file_name)
 	if (load_file_into_buffer(&file_buffer, &file_buffer_length, file_name))
 		return (NULL);
 
-	smf = smf_load_from_memory(file_buffer, file_buffer_length);
+	smf = smf_load_from_memory_with_options(file_buffer, file_buffer_length, options);
 
 	memset(file_buffer, 0, file_buffer_length);
 	free(file_buffer);

@@ -226,10 +226,25 @@ extern "C" {
 /** Opaque type representing a dynamic array. */
 typedef struct smf_vector smf_vector_t;
 
+typedef struct smf_options_struct smf_options_t;
 typedef struct smf_struct smf_t;
 typedef struct smf_track_struct smf_track_t;
 typedef struct smf_event_struct smf_event_t;
 typedef struct smf_tempo_struct smf_tempo_t;
+
+
+enum smf_option_flag {
+	/** SMF has variable long delta time. Use one byte delta time instead (as used e.g. by D110 sound module). */
+	SMF_OPTION_USE_ONE_BYTE_DELTA_TIME_WHEN_LOADING  = 1 << 0,
+};
+
+typedef enum smf_option_flag smf_option_flag_t;
+
+
+/** Represents options used during processing data. */
+struct smf_options_struct {
+	int option_flags;
+};
 
 
 /** Represents a "song", that is, collection of one or more tracks. */
@@ -288,7 +303,9 @@ int smf_add_track(smf_t *smf, smf_track_t *track) WARN_UNUSED_RESULT;
 
 /* Routines for loading SMF files. */
 smf_t *smf_load(const char *file_name) WARN_UNUSED_RESULT;
+smf_t *smf_load_with_options(const char *file_name, const smf_options_t options) WARN_UNUSED_RESULT;
 smf_t *smf_load_from_memory(const void *buffer, const int buffer_length) WARN_UNUSED_RESULT;
+smf_t *smf_load_from_memory_with_options(const void *buffer, const int buffer_length, const smf_options_t options) WARN_UNUSED_RESULT;
 
 /* Routine for writing SMF files. */
 int smf_save(smf_t *smf, const char *file_name) WARN_UNUSED_RESULT;
@@ -393,6 +410,7 @@ int smf_event_is_eot(const smf_event_t *event) WARN_UNUSED_RESULT;
 int smf_event_is_textual(const smf_event_t *event) WARN_UNUSED_RESULT;
 char *smf_event_decode(const smf_event_t *event) WARN_UNUSED_RESULT;
 char *smf_event_extract_text(const smf_event_t *event) WARN_UNUSED_RESULT;
+char *smf_event_extract_text_with_options(const smf_event_t *event, const smf_options_t options) WARN_UNUSED_RESULT;
 
 
 /** Describes a single tempo or time signature change. */
