@@ -3,7 +3,15 @@ and writing Standard MIDI Files (*.mid). It transparently handles
 conversions between time and pulses, tempo maps, and more. Full API
 documentation and an example program (which is also rather useful in
 its own right) are also provided. libsmf was originally written and
-maintained by Edward Tomasz Napierała at http://libsmf.sourceforge.net/.
+maintained by Edward Tomasz Napierała at https://libsmf.sourceforge.net/
+until 2010, then John Stumpo continued its development from 2013.
+John decided to drop glib dependency on 20130723 and it was done on the
+libsmf1 branch on 20130804. Later Simon Feltman started to work on the
+master branch on 20131213 in order to add GObject introspection and gtk-doc
+which is based on glib. Obviously the libsmf1 branch (without glib) and the
+master branch (with glib) are not compatible. In this repository the libsmf1
+branch is selected as base branch because glib is too much in this project.
+
 
 This package has no dependencies other than the standard C library.
 It builds in the usual autotools manner:
@@ -13,5 +21,7 @@ It builds in the usual autotools manner:
   $ make
   # make install
 
-Release directory:
+Deprecated release directory:
 http://ftp.stump.io/software/libsmf/
+
+Currently there are no new releases, however there could be.
