@@ -634,10 +634,10 @@ smf_event_is_textual(const smf_event_t *event)
 	if (!smf_event_is_metadata(event))
 		return (0);
 
-	if (event->midi_buffer_length < 4)
+	if (event->midi_buffer_length < 2) // Checking only if it has 2nd byte as meta type.
 		return (0);
 
-	if (event->midi_buffer[3] < 1 || event->midi_buffer[3] > 9)
+	if (event->midi_buffer[1] < 1 || event->midi_buffer[1] > 9)
 		return (0);
 
 	return (1);
